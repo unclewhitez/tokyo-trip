@@ -7,30 +7,43 @@ import {
   Wallet, PieChart as PieChartIcon, Train, Coffee, Utensils, Beer, Ticket, CreditCard, 
   Banknote, Calendar, Plus, Minus, Trash2, Settings, ListTodo, ReceiptText, ShoppingBag, 
   ShoppingCart, Gift, Moon, Sun, Calculator, Map as MapIcon, ExternalLink, MapPin,
-  Edit, Save
+  Edit, Save, RefreshCw
 } from 'lucide-react';
 
-// --- ข้อมูลแผนการเดินทางตั้งต้น (ค่า Default กรณีเข้าครั้งแรก) ---
+// --- ข้อมูลแผนการใช้จ่าย (จากไฟล์อัปเดต) ---
 const defaultPlannedExpensesData = [
-  { id: 'p1', day: 'Day 1', category: 'Transport', item: 'Narita to Kuramae', cost: 1350, method: 'Suica' },
-  { id: 'p2', day: 'Day 1', category: 'Food', item: 'Lunch + Dinner + Snacks', cost: 3800, method: 'Cash' },
-  { id: 'p3', day: 'Day 1', category: 'Coffee', item: 'Morning coffee', cost: 700, method: 'Cash' },
-  { id: 'p4', day: 'Day 1', category: 'Beer', item: 'Asahi Sky Room', cost: 1800, method: 'Credit Card' },
-  { id: 'p5', day: 'Day 2', category: 'Coffee', item: 'Morning', cost: 700, method: 'Cash' },
-  { id: 'p6', day: 'Day 2', category: 'Transport', item: 'Local trains', cost: 510, method: 'Suica' },
-  { id: 'p7', day: 'Day 2', category: 'Ticket', item: 'Museum entries', cost: 1400, method: 'Cash' },
-  { id: 'p8', day: 'Day 2', category: 'Food', item: 'Meals + snack', cost: 2600, method: 'Cash' },
-  { id: 'p9', day: 'Day 2', category: 'Coffee', item: 'Afternoon', cost: 1200, method: 'Cash' },
-  { id: 'p10', day: 'Day 2', category: 'Beer', item: 'Craft beer', cost: 4000, method: 'Travel Card' },
-  { id: 'p11', day: 'Day 3', category: 'Transport', item: 'Shibuya', cost: 500, method: 'Suica' },
-  { id: 'p12', day: 'Day 3', category: 'Food', item: 'Festival + Dinner', cost: 4500, method: 'Cash' },
+  // Day 1
+  { id: 'p1', day: 'Day 1', category: 'Transport', item: 'เดินทางสนามบิน → โรงแรม', cost: 1300, method: 'Suica' },
+  { id: 'p2', day: 'Day 1', category: 'Coffee', item: 'กาแฟเช้า + บ่าย', cost: 1000, method: 'Cash' },
+  { id: 'p3', day: 'Day 1', category: 'Food', item: 'อาหารกลางวัน', cost: 1200, method: 'Cash' },
+  { id: 'p4', day: 'Day 1', category: 'Food', item: 'อาหารเย็น', cost: 1300, method: 'Cash' },
+  { id: 'p5', day: 'Day 1', category: 'Beer', item: 'เบียร์ (Asahi)', cost: 2000, method: 'Credit Card' },
+  { id: 'p6', day: 'Day 1', category: 'Other', item: 'จิปาถะ', cost: 500, method: 'Suica' },
+  // Day 2
+  { id: 'p7', day: 'Day 2', category: 'Transport', item: 'ค่าเดินทาง', cost: 600, method: 'Suica' },
+  { id: 'p8', day: 'Day 2', category: 'Ticket', item: 'Museum', cost: 1000, method: 'Cash' },
+  { id: 'p9', day: 'Day 2', category: 'Ticket', item: 'Optional Museum', cost: 400, method: 'Cash' },
+  { id: 'p10', day: 'Day 2', category: 'Coffee', item: 'กาแฟ', cost: 1500, method: 'Cash' },
+  { id: 'p11', day: 'Day 2', category: 'Food', item: 'อาหารกลางวัน', cost: 2000, method: 'Cash' },
+  { id: 'p12', day: 'Day 2', category: 'Food', item: 'มื้อเบา (Pre-dinner)', cost: 800, method: 'Cash' },
+  { id: 'p13', day: 'Day 2', category: 'Beer', item: 'คราฟต์เบียร์', cost: 5000, method: 'Travel Card' },
+  // Day 3
+  { id: 'p14', day: 'Day 3', category: 'Transport', item: 'ค่าเดินทาง', cost: 800, method: 'Suica' },
+  { id: 'p15', day: 'Day 3', category: 'Coffee', item: 'กาแฟ', cost: 1000, method: 'Cash' },
+  { id: 'p16', day: 'Day 3', category: 'Food', item: 'อาหารกลางวัน/เย็น', cost: 3500, method: 'Cash' },
+  { id: 'p17', day: 'Day 3', category: 'Snack', item: 'ขนม/น้ำ', cost: 800, method: 'Suica' },
+  // Day 4
+  { id: 'p18', day: 'Day 4', category: 'Transport', item: 'ค่าเดินทาง', cost: 800, method: 'Suica' },
+  { id: 'p19', day: 'Day 4', category: 'Coffee', item: 'กาแฟ', cost: 1200, method: 'Cash' },
+  { id: 'p20', day: 'Day 4', category: 'Food', item: 'อาหาร', cost: 3000, method: 'Cash' },
+  { id: 'p21', day: 'Day 4', category: 'Beer', item: 'คราฟต์เบียร์', cost: 3000, method: 'Travel Card' },
+  { id: 'p22', day: 'Day 4', category: 'Other', item: 'จิปาถะ', cost: 500, method: 'Suica' },
+  // Day 5
+  { id: 'p23', day: 'Day 5', category: 'Transport', item: 'ไปสนามบิน', cost: 1300, method: 'Suica' },
+  { id: 'p24', day: 'Day 5', category: 'Food', item: 'กาแฟ + อาหารเล็กน้อย', cost: 500, method: 'Cash' }
 ];
 
-const initialActualExpenses = [
-  { id: 1, day: 'Day 1', category: 'Transport', item: 'เติมเงิน Suica ที่นาริตะ', cost: 5000, method: 'Cash' },
-  { id: 2, day: 'Day 1', category: 'Food', item: 'ราเมนข้อสอบมื้อแรก', cost: 1500, method: 'Suica' },
-  { id: 3, day: 'Day 1', category: 'Coffee', item: 'กาแฟ Blue Bottle', cost: 850, method: 'Travel Card' },
-];
+const initialActualExpenses = []; // เริ่มต้นทริปใหม่แบบรายจ่ายจริงว่างเปล่า
 
 const categoryColors = {
   'Food': '#FF8042', 'Snack': '#F472B6', 'Beer': '#FFBB28', 'Coffee': '#00C49F',
@@ -48,56 +61,80 @@ const initialPaymentBudgets = {
   'Cash': 40000, 'Suica': 15000, 'Travel Card': 30000, 'Credit Card': 41000
 };
 
-// --- ข้อมูล Day Plan (Itinerary) เริ่มต้น ---
+// --- ข้อมูล Day Plan (Itinerary จากไฟล์อัปเดต) ---
 const defaultItinerary = [
   {
-    day: 'Day 1', date: 'พฤหัสบดีที่ 7 พฤษภาคม', title: 'Arrival & Asakusa',
+    day: 'Day 1', date: 'พฤหัสบดีที่ 7 พฤษภาคม', title: 'Asakusa + Ueno + Beer',
     details: [
-      { time: '08:00', desc: '✈️ เดินทางถึงสนามบินนาริตะ (Narita Airport)' },
-      { time: '10:00', desc: '🚆 นั่งรถไฟเข้าเมือง ไปลงที่ Kuramae' },
-      { time: '11:00', desc: '🏨 ฝากกระเป๋าที่ APA Hotel Asakusa Kuramae' },
-      { time: '12:00', desc: '🍜 มื้อเที่ยง: Homemade Noodles Billiken' },
-      { time: '14:00', desc: '☕ เดินเล่นคาเฟ่ย่าน Kuramae' },
-      { time: '18:00', desc: '🍻 ดื่มเบียร์ Asahi Sky Room' }
+      { time: '08:00', desc: '✈️ ถึงสนามบินนาริตะ (Terminal 2) ผ่าน ตม. & รับกระเป๋า' },
+      { time: '09:00', desc: '🚆 นั่งรถไฟ Keisei Access Express เข้าเมือง (ลง Kuramae)' },
+      { time: '10:15', desc: '🏨 แวะฝากกระเป๋าที่ APA Hotel Asakusa Kuramae' },
+      { time: '10:30', desc: '⛩️ แวะไหว้ศาลเจ้าคุรามาเอะ (Kuramae Shrine)' },
+      { time: '10:45', desc: '☕ จิบกาแฟย่าน Kuramae (BARK / Sol’s / Lucent)' },
+      { time: '11:30', desc: '🍜 มื้อเที่ยง: Homemade Noodles Billiken (หรือ Ichiran/Isomaru)' },
+      { time: '13:00', desc: '🏮 ไหว้พระวัดเซ็นโซจิ (Senso-ji) & เดิน Nakamise' },
+      { time: '14:30', desc: '🌸 นั่งรถรางไหว้พระวัดหัวไชเท้า (Matsuchiyama Shoden)' },
+      { time: '16:15', desc: '🏨 กลับโรงแรมเช็คอิน พักขา ชาร์จแบต' },
+      { time: '17:00', desc: '🛍️ นั่ง Oedo Line ไปลุยตลาด Ameyoko & ตึกม่วง Takeya' },
+      { time: '18:30', desc: '🍱 มื้อเย็น @ Ueno (หมูทอด Tonkatsu Yamabe / ซูชิ)' },
+      { time: '20:15', desc: '🍺 นั่ง Ginza Line มา Asakusa ดื่มเบียร์ Asahi Sky Room (ชั้น 22)' }
     ]
   },
   {
-    day: 'Day 2', date: 'ศุกร์ที่ 8 พฤษภาคม', title: 'Senso-ji & Chill',
+    day: 'Day 2', date: 'ศุกร์ที่ 8 พฤษภาคม', title: 'Ueno + Ryogoku (Art & Beer)',
     details: [
-      { time: '09:00', desc: '🏮 ไหว้พระวัด Senso-ji (Asakusa)' },
-      { time: '11:00', desc: '📸 เดินถ่ายรูปริมแม่น้ำ Sumida' },
-      { time: '13:00', desc: '🍣 มื้อเที่ยงแถวอาซากุสะ' },
-      { time: '15:00', desc: '🚶‍♂️ กลับมาเดินเล่นย่าน Kuramae (ร้านเครื่องเขียน/ของกุ๊กกิ๊ก)' },
-      { time: '19:00', desc: '🍺 มื้อเย็น: ร้านปิ้งย่าง Isomaru Suisan' }
+      { time: '08:30', desc: '☕ กาแฟเช้าย่าน Kuramae (Leaves / Kakuya / Nui)' },
+      { time: '09:15', desc: '🚆 นั่ง Oedo Line ไปลง Ueno-Okachimachi' },
+      { time: '09:30', desc: '🏛️ ชม Tokyo National Museum (Japan Gallery)' },
+      { time: '12:30', desc: '🌿 พักขารับลมในสวน Ueno Park' },
+      { time: '13:00', desc: '🍱 มื้อเที่ยง: Magurobito / Unatoto / Gyukatsu Motomura' },
+      { time: '14:15', desc: '☕ Coffee Break: Glitch Coffee Kanda หรือ Blue Bottle Akihabara' },
+      { time: '15:30', desc: '🚆 นั่ง JR ไปย่านซูโม่ Ryogoku' },
+      { time: '16:00', desc: '🏛️ เสพงานศิลป์ The Sumida Hokusai Museum' },
+      { time: '17:15', desc: '🏟️ เดินเล่นถ่ายรูป Ryogoku Kokugikan (สนามซูโม่)' },
+      { time: '17:45', desc: '🍝 มื้อเย็นเบาๆ รองท้อง (Saizeriya / Yakitori / Gyoza)' },
+      { time: '18:30', desc: '🍻 ไฮไลต์: ดื่มคราฟต์เบียร์ Beer Club Popeye (70 Taps)' },
+      { time: '20:00', desc: '🌉 เดินรับลมริมแม่น้ำ Sumida ถ่ายรูป Skytree แล้วกลับที่พัก' }
     ]
   },
   {
-    day: 'Day 3', date: 'เสาร์ที่ 9 พฤษภาคม', title: 'Ueno Shopping',
+    day: 'Day 3', date: 'เสาร์ที่ 9 พฤษภาคม', title: 'Thai Festival & Shibuya',
     details: [
-      { time: '09:30', desc: '🌳 เดินเล่นรับลมสวน Ueno' },
-      { time: '11:00', desc: '🛍️ ลุยตลาด Ameyoko' },
-      { time: '13:00', desc: '🍛 มื้อเที่ยงแถวอูเอโนะ' },
-      { time: '15:00', desc: '🛍️ ช้อปปิ้งของฝาก/ขนม ตึกม่วง Takeya' },
-      { time: '18:30', desc: '🍺 ดื่มเบียร์เย็นๆ ที่ Kirin City Ueno' }
+      { time: '08:30', desc: '🚇 นั่ง Ginza Line จาก Asakusa ไปลงสุดสาย Shibuya' },
+      { time: '09:30', desc: '☕ Coffee Morning ที่ Fuglen Tokyo (ฝั่ง Tomigaya)' },
+      { time: '10:00', desc: '🤝 ลุยงาน Thai Festival สวนโยโยงิ (คิวงานจับมือช่วงเช้า)' },
+      { time: '12:00', desc: '🇹🇭 มื้อเที่ยงในงาน Thai Fest หรือฝั่ง Shibuya' },
+      { time: '14:00', desc: '🎤 ชมการแสดง Thai Festival เวทีหลัก' },
+      { time: '16:00', desc: '🛍️ ช้อปปิ้ง Shibuya (Parco / Donki / Miyashita Park)' },
+      { time: '18:30', desc: '🍱 มื้อเย็น: โหลดคาร์บ (เช่น Afuri Ramen)' },
+      { time: '20:30', desc: '🍵 เดินชม Shibuya Crossing แวะซื้อน้ำเกลือแร่เตรียมวิ่งพรุ่งนี้' },
+      { time: '21:30', desc: '🛏️ กลับถึงที่พัก ยืดเหยียดเตรียมนอน' }
     ]
   },
   {
-    day: 'Day 4', date: 'อาทิตย์ที่ 10 พฤษภาคม', title: 'Shrine & Akihabara',
+    day: 'Day 4', date: 'อาทิตย์ที่ 10 พฤษภาคม', title: 'Run + Harajuku + Akihabara',
     details: [
-      { time: '09:00', desc: '⛩️ ไหว้พระเสริมดวงการงาน (ศาลเจ้า Kanda Myojin)' },
-      { time: '11:30', desc: '🎮 ลุยดงอากิฮาบาระ (Akihabara)' },
-      { time: '14:00', desc: '⌨️ แวะดู Custom Keyboard ร้าน Yusha Kobo' },
-      { time: '16:00', desc: '🕹️ แวะตึก Gachapon / เกมเซ็นเตอร์' }
+      { time: '06:45', desc: '🏃‍♂️ Morning Run 5km ริมแม่น้ำ Sumida (วิ่งลอด 3 สะพาน)' },
+      { time: '07:40', desc: '🚿 อาบน้ำ แต่งตัว เตรียมออกเที่ยว' },
+      { time: '09:00', desc: '🚆 นั่งรถไฟไป Harajuku' },
+      { time: '09:30', desc: '⛩️ ไหว้ศาลเจ้าเมจิ (Meiji Jingu)' },
+      { time: '11:00', desc: '🛍️ เดินเล่น Takeshita Street & Omotesando' },
+      { time: '13:00', desc: '🚆 นั่ง JR Yamanote Line ไปลง Akihabara' },
+      { time: '13:30', desc: '☕ Coffee Break: Glitch Kanda / Mermaid Coffee' },
+      { time: '14:30', desc: '📍 สำรวจ Akihabara (AKB48 / Gachapon / Radio Kaikan)' },
+      { time: '18:00', desc: '🍺 คราฟต์เบียร์มื้อเย็น (Hitachino / iBrew / Yona Yona)' },
+      { time: '20:30', desc: '🧳 กลับที่พัก แพ็กกระเป๋าเตรียมกลับ' }
     ]
   },
   {
-    day: 'Day 5', date: 'จันทร์ที่ 11 พฤษภาคม', title: 'Free Day / Departure',
+    day: 'Day 5', date: 'จันทร์ที่ 11 พฤษภาคม', title: 'Departure',
     details: [
-      { time: '09:00', desc: '☕ จิบกาแฟชิลๆ ส่งท้าย' },
-      { time: '10:30', desc: '🎒 เช็คเอาท์ออกจากโรงแรม' },
-      { time: '11:30', desc: '🛍️ เก็บตกของฝากรอบสุดท้าย' },
-      { time: '14:00', desc: '🚆 นั่งรถไฟกลับสนามบินนาริตะ' },
-      { time: '17:00', desc: '🛫 เดินทางกลับไทย ปลอดภัย!' }
+      { time: '07:00', desc: '🎒 เช็คเอาต์ คืนกุญแจโรงแรม' },
+      { time: '07:15', desc: '☕ จิบกาแฟส่งท้าย (Lucent / Sol’s)' },
+      { time: '07:50', desc: '🚆 เดินทางไปสนามบินด้วยขบวน Access Express' },
+      { time: '09:00', desc: '✈️ ถึงนาริตะ (T2) เช็คอิน & ช้อป Duty Free' },
+      { time: '11:10', desc: '🛫 รอที่ Gate เตรียมออกเดินทางไฟลต์ XJ603' },
+      { time: '16:55', desc: '🇹🇭 ถึงสนามบินดอนเมืองโดยสวัสดิภาพ' }
     ]
   }
 ];
@@ -119,12 +156,11 @@ export default function App() {
   // --- Custom Confirm Modal State ---
   const [confirmState, setConfirmState] = useState({ isOpen: false, message: '', onConfirm: null });
 
-  // Helper Function สำหรับใช้แทน window.confirm
   const requestConfirm = (message, onConfirm) => {
     setConfirmState({ isOpen: true, message, onConfirm });
   };
 
-  // --- States: จำนวนวันเดินทาง (Dynamic Days) ---
+  // --- States: จำนวนวันเดินทาง ---
   const [tripDays, setTripDays] = useState(() => {
     return Number(localStorage.getItem('tokyo_tripDays')) || 5;
   });
@@ -134,7 +170,6 @@ export default function App() {
     return localStorage.getItem('tokyo_theme') === 'dark';
   });
 
-  // --- States: เครื่องคิดเลขแปลงเงิน ---
   const [exchangeRate, setExchangeRate] = useState(() => Number(localStorage.getItem('tokyo_exchangeRate')) || 0.225);
   const [calcYen, setCalcYen] = useState('');
 
@@ -156,7 +191,7 @@ export default function App() {
   
   const [globalBudget, setGlobalBudget] = useState(() => {
     const saved = localStorage.getItem('tokyo_globalBudget');
-    return saved ? JSON.parse(saved) : 60000;
+    return saved ? JSON.parse(saved) : 45000; // ปรับให้ตรงกับ Max Budget จากไฟล์
   }); 
   
   const [categoryBudgets, setCategoryBudgets] = useState(() => {
@@ -176,6 +211,22 @@ export default function App() {
   const [newExpense, setNewExpense] = useState({
     day: 'Day 1', category: 'Food', item: '', cost: '', method: 'Cash'
   });
+
+  // ฟังก์ชันโหลดข้อมูลเริ่มต้นทับของเก่า (Sync from Template)
+  const reloadDefaultData = () => {
+    requestConfirm('คุณต้องการรีเซ็ต "แพลนเที่ยว" และ "งบประมาณ" กลับไปเป็นข้อมูลตั้งต้นใช่หรือไม่?\n\n(รายจ่ายจริงที่คุณเคยบันทึกไว้จะไม่หายไป)', () => {
+      setItinerary(defaultItinerary);
+      setPlannedExpenses(defaultPlannedExpensesData);
+      setTripDays(5);
+      
+      const newBudgets = {};
+      Object.keys(categoryColors).forEach(cat => newBudgets[cat] = 0);
+      defaultPlannedExpensesData.forEach(exp => { if (newBudgets[exp.category] !== undefined) newBudgets[exp.category] += exp.cost; });
+      setCategoryBudgets(newBudgets);
+      
+      setGlobalBudget(45000);
+    });
+  };
 
   // --- Auto-Save ---
   useEffect(() => {
@@ -315,13 +366,12 @@ export default function App() {
   return (
     <div className={`min-h-screen font-sans pb-24 transition-colors duration-200 relative ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
       
-      {/* --- ส่วนหัวและเครื่องคิดเลข (Sticky แบบติดขอบจอบน) --- */}
+      {/* --- ส่วนหัวและเครื่องคิดเลข --- */}
       <div className={`sticky top-0 z-40 px-4 py-3 shadow-sm border-b transition-colors ${isDarkMode ? 'bg-gray-900/95 border-gray-800' : 'bg-white/95 border-gray-200'} backdrop-blur-md`}>
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex justify-between items-center">
             <h1 className="text-xl md:text-2xl font-bold tracking-tight">โตเกียวทริป 🗼</h1>
             
-            {/* --- เมนูสำหรับ Desktop (คอมพิวเตอร์) --- */}
             <div className="hidden md:flex items-center gap-2">
               <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'overview' ? 'bg-blue-600 text-white shadow-md' : isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>ภาพรวม</button>
               <button onClick={() => setActiveTab('itinerary')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'itinerary' ? 'bg-blue-600 text-white shadow-md' : isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Day Plan</button>
@@ -334,13 +384,11 @@ export default function App() {
               </button>
             </div>
 
-            {/* --- ปุ่มโหมดมืดสำหรับ Mobile --- */}
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`md:hidden p-2 rounded-full transition-colors ${isDarkMode ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-600'}`}>
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
           
-          {/* Currency Converter (Compact สำหรับมือถือและ Desktop) */}
           <div className="flex items-center gap-2 text-sm">
             <Calculator size={18} className="text-indigo-500 shrink-0 hidden md:block" />
             <div className="relative flex-1">
@@ -362,7 +410,6 @@ export default function App() {
         {/* --- Tab 1: Overview --- */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               <div className={`p-4 md:p-6 rounded-2xl shadow-sm border flex flex-col md:flex-row items-start md:items-center gap-3 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl"><ListTodo size={20} /></div>
@@ -382,7 +429,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Wallet Status */}
             <div className={`p-5 md:p-6 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <h3 className="text-base md:text-lg font-bold mb-4 md:mb-6 flex items-center gap-2"><Wallet size={18} className="text-indigo-500" /> กระเป๋าเงิน (Wallet)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -413,7 +459,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className={`p-5 md:p-6 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <div className="flex justify-between items-center mb-4">
@@ -458,7 +503,7 @@ export default function App() {
           </div>
         )}
 
-        {/* --- Tab 5: Day Plan (แพลนแบบแยกแต่ละวัน แบบแก้ไขได้ พร้อมปุ่มเพิ่ม/ลดวัน) --- */}
+        {/* --- Tab 5: Day Plan (แพลนแบบแยกแต่ละวัน) --- */}
         {activeTab === 'itinerary' && (
           <div className="animate-in fade-in duration-300 space-y-4">
             
@@ -469,7 +514,7 @@ export default function App() {
                   key={day}
                   onClick={() => {
                     setSelectedPlanDay(day);
-                    setIsEditPlanMode(false); // ปิดโหมดแก้ไขเมื่อสลับวัน
+                    setIsEditPlanMode(false);
                   }}
                   className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${selectedPlanDay === day ? 'bg-emerald-500 text-white shadow-md' : (isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50')}`}
                 >
@@ -477,7 +522,6 @@ export default function App() {
                 </button>
               ))}
               
-              {/* ปุ่มเพิ่มวัน / ลดวัน */}
               <div className={`flex items-center gap-1 pl-2 border-l ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
                 <button 
                   onClick={() => setTripDays(prev => prev + 1)} 
@@ -508,13 +552,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* เนื้อหาของ Day ที่ถูกเลือก */}
             <div className={`p-5 md:p-6 rounded-2xl shadow-sm border min-h-[400px] transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <div className="flex justify-between items-start mb-4 md:mb-6">
                  <h3 className="text-lg font-bold flex items-center gap-2">
                     <Calendar className="text-emerald-500" size={22}/> Day Plan
                  </h3>
-                 {/* ปุ่มเปิด/ปิด โหมดแก้ไข */}
                  <button 
                     onClick={() => setIsEditPlanMode(!isEditPlanMode)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${isEditPlanMode ? 'bg-emerald-500 text-white shadow-sm' : (isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}`}
@@ -528,7 +570,6 @@ export default function App() {
 
                 return (
                   <div className="relative">
-                    {/* ส่วนหัวข้อและวันที่ */}
                     {isEditPlanMode ? (
                        <div className={`mb-6 space-y-3 pb-4 border-b border-dashed ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                           <div>
@@ -550,7 +591,6 @@ export default function App() {
                        </div>
                     )}
                     
-                    {/* ส่วนรายการกิจกรรม */}
                     <div className="space-y-3">
                       {plan.details.map((act, i) => (
                         <div key={i} className={`p-4 rounded-xl border flex items-center justify-between gap-2 md:gap-4 transition-colors ${isDarkMode ? 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/60' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm'}`}>
@@ -562,7 +602,6 @@ export default function App() {
                                {act.desc}
                              </div>
                           </div>
-                          {/* ปุ่มลบ จะโผล่มาเฉพาะโหมดแก้ไข */}
                           {isEditPlanMode && (
                              <button onClick={() => handleDeletePlanActivity(selectedPlanDay, i)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 dark:hover:bg-gray-600 transition-colors shrink-0">
                                <Trash2 size={16} />
@@ -575,7 +614,6 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* ฟอร์มสำหรับเพิ่มกิจกรรม จะโผล่มาเฉพาะโหมดแก้ไข */}
                     {isEditPlanMode && (
                        <form onSubmit={(e) => handleAddPlanActivity(e, selectedPlanDay)} className={`mt-4 p-3 md:p-4 rounded-xl border flex flex-col md:flex-row gap-2 md:gap-3 transition-colors ${isDarkMode ? 'bg-gray-700/50 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
                           <input type="text" value={newPlanTime} onChange={e => setNewPlanTime(e.target.value)} placeholder="เวลา (เช่น 10:00, เช้า)" className={`w-full md:w-36 p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-emerald-500 ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-emerald-200 text-gray-900'}`} required/>
@@ -595,13 +633,11 @@ export default function App() {
         {/* --- Tab 2: Details (รายการใช้จ่าย) --- */}
         {activeTab === 'details' && (
           <div className="animate-in fade-in duration-300">
-            {/* Switcher แบบปุ่มใหญ่กดง่ายบนมือถือ */}
             <div className={`flex p-1.5 mb-4 rounded-xl shadow-inner ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200/70'}`}>
               <button onClick={() => setDetailsView('actual')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${detailsView === 'actual' ? (isDarkMode ? 'bg-gray-600 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>จ่ายจริง ({actualExpenses.length})</button>
               <button onClick={() => setDetailsView('planned')} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${detailsView === 'planned' ? (isDarkMode ? 'bg-gray-600 text-white shadow-sm' : 'bg-white text-gray-900 shadow-sm') : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>แผน ({plannedExpenses.length})</button>
             </div>
 
-            {/* List ของรายการค่าใช้จ่ายแบบ Card */}
             <div className="space-y-3">
               {(detailsView === 'actual' ? actualExpenses : plannedExpenses).sort((a,b) => {
                 const numA = parseInt(a.day.replace('Day ', '')) || 0;
@@ -638,7 +674,7 @@ export default function App() {
           </div>
         )}
 
-        {/* --- Tab 3: Map (รูปภาพแผนที่ / รูปอ้างอิง) --- */}
+        {/* --- Tab 3: Map --- */}
         {activeTab === 'map' && (
           <div className="animate-in fade-in duration-300">
             <div className={`p-4 md:p-6 rounded-2xl shadow-sm border flex flex-col transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
@@ -664,14 +700,12 @@ export default function App() {
         {/* --- Tab 4: Manage Data --- */}
         {activeTab === 'manage' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-            {/* Form: Add Expense / Plan */}
             <div className={`p-5 md:p-6 rounded-2xl shadow-sm border h-fit transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
               <div className="flex flex-col mb-6 gap-3">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   <ReceiptText size={20} className={entryType === 'actual' ? "text-rose-500" : "text-blue-500"} /> 
                   เพิ่มรายการใช้จ่าย
                 </h3>
-                {/* Switcher */}
                 <div className={`flex p-1 rounded-lg text-xs font-medium ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                   <button type="button" onClick={() => setEntryType('actual')} className={`flex-1 py-2 rounded-md transition-all ${entryType === 'actual' ? 'bg-rose-500 text-white shadow-sm' : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>จ่ายจริง</button>
                   <button type="button" onClick={() => setEntryType('plan')} className={`flex-1 py-2 rounded-md transition-all ${entryType === 'plan' ? 'bg-blue-500 text-white shadow-sm' : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>แผนการเงินล่วงหน้า</button>
@@ -717,10 +751,23 @@ export default function App() {
               </form>
             </div>
 
-            {/* Forms: Settings */}
             <div className="space-y-6 pb-6">
-              
-              {/* ส่วนตั้งค่าวันเดินทาง ในหน้าจัดการ (เผื่อต้องการแก้ไขจากหน้านี้) */}
+              {/* ปุ่มโหลดข้อมูลแผน (Reset Data) */}
+              <div className={`p-5 md:p-6 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                <h3 className="text-base font-bold mb-2 flex items-center gap-2 text-rose-500">
+                  <RefreshCw size={18} /> โหลดข้อมูลแผนใหม่ (Reset)
+                </h3>
+                <p className={`text-xs mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  หากคุณไม่เห็นแผนการเดินทางที่อัปเดตใหม่ ให้กดปุ่มนี้เพื่อดึงข้อมูลแผนใหม่ล่าสุดจากระบบ (ข้อมูลรายจ่ายจริงจะไม่ถูกลบ)
+                </p>
+                <button 
+                  onClick={reloadDefaultData}
+                  className={`w-full py-2.5 rounded-lg text-sm font-bold transition-colors border ${isDarkMode ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                >
+                  โหลดข้อมูลแผนใหม่
+                </button>
+              </div>
+
               <div className={`p-5 md:p-6 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <h3 className="text-base font-bold mb-4 flex items-center justify-between">
                   <span className="flex items-center gap-2"><Calendar size={18} className="text-emerald-500" /> จำนวนวันเดินทาง</span>
@@ -763,24 +810,6 @@ export default function App() {
                 <div className="relative">
                   <span className={`absolute left-3 top-2.5 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>¥</span>
                   <input type="number" value={globalBudget} onChange={e => setGlobalBudget(Number(e.target.value))} className={`w-full pl-8 p-2 rounded-lg outline-none transition-colors border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}/>
-                </div>
-              </div>
-
-              <div className={`p-5 md:p-6 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
-                <h3 className="text-base font-bold mb-4 flex items-center gap-2"><PieChartIcon size={18} className="text-purple-500" /> งบประมาณรายหมวดหมู่</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {Object.keys(categoryBudgets).map(cat => {
-                    const Icon = categoryIcons[cat];
-                    return (
-                      <div key={cat}>
-                        <label className="block text-[10px] md:text-xs font-medium mb-1 flex items-center gap-1">{Icon && <Icon size={12} style={{ color: categoryColors[cat] }} />} {cat}</label>
-                        <div className="relative">
-                          <span className={`absolute left-2.5 top-2.5 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>¥</span>
-                          <input type="number" value={categoryBudgets[cat] || ''} onChange={e => setCategoryBudgets(prev => ({ ...prev, [cat]: Number(e.target.value) }))} className={`w-full pl-6 p-2 text-sm rounded-lg outline-none transition-colors border focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200 text-gray-900'}`}/>
-                        </div>
-                      </div>
-                    )
-                  })}
                 </div>
               </div>
             </div>
