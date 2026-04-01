@@ -5,8 +5,9 @@ import {
 } from 'recharts';
 import { 
   Wallet, PieChart as PieChartIcon, Train, Coffee, Utensils, Beer, Ticket, CreditCard, 
-  Banknote, Calendar, Plus, Trash2, Settings, ListTodo, ReceiptText, ShoppingBag, 
-  ShoppingCart, Gift, Moon, Sun, Calculator, Map as MapIcon, ExternalLink, MapPin
+  Banknote, Calendar, Plus, Minus, Trash2, Settings, ListTodo, ReceiptText, ShoppingBag, 
+  ShoppingCart, Gift, Moon, Sun, Calculator, Map as MapIcon, ExternalLink, MapPin,
+  Edit, Save
 } from 'lucide-react';
 
 // --- ข้อมูลแผนการเดินทางตั้งต้น (ค่า Default กรณีเข้าครั้งแรก) ---
@@ -47,9 +48,8 @@ const initialPaymentBudgets = {
   'Cash': 40000, 'Suica': 15000, 'Travel Card': 30000, 'Credit Card': 41000
 };
 
-// --- ข้อมูลแพลนเที่ยว (Itinerary) แก้ไขรายละเอียดแต่ละวันตรงนี้ได้เลย ---
-// **แนะนำ: ถ้าวันไหนดังรายละเอียดเยอะ สามารถเติม { time: '...', desc: '...' } ไปเรื่อยๆ ได้เลยครับ**
-const tripItinerary = [
+// --- ข้อมูล Day Plan (Itinerary) เริ่มต้น ---
+const defaultItinerary = [
   {
     day: 'Day 1', date: 'พฤหัสบดีที่ 7 พฤษภาคม', title: 'Arrival & Asakusa',
     details: [
@@ -109,8 +109,21 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [detailsView, setDetailsView] = useState('actual');
   const [entryType, setEntryType] = useState('actual'); 
-  const [selectedPlanDay, setSelectedPlanDay] = useState('Day 1'); // State สำหรับ Tab ใน Day Plan
   
+  // --- States: Day Plan ---
+  const [selectedPlanDay, setSelectedPlanDay] = useState('Day 1');
+  const [isEditPlanMode, setIsEditPlanMode] = useState(false);
+  const [newPlanTime, setNewPlanTime] = useState('');
+  const [newPlanDesc, setNewPlanDesc] = useState('');
+
+  // --- Custom Confirm Modal State ---
+  const [confirmState, setConfirmState] = useState({ isOpen: false, message: '', onConfirm: null });
+
+  // Helper Function สำหรับใช้แทน window.confirm
+  const requestConfirm = (message, onConfirm) => {
+    setConfirmState({ isOpen: true, message, onConfirm });
+  };
+
   // --- States: จำนวนวันเดินทาง (Dynamic Days) ---
   const [tripDays, setTripDays] = useState(() => {
     return Number(localStorage.getItem('tokyo_tripDays')) || 5;
@@ -126,6 +139,11 @@ export default function App() {
   const [calcYen, setCalcYen] = useState('');
 
   // --- States: ดึงข้อมูลจาก Local Storage ---
+  const [itinerary, setItinerary] = useState(() => {
+    const saved = localStorage.getItem('tokyo_itinerary');
+    return saved ? JSON.parse(saved) : defaultItinerary;
+  });
+
   const [plannedExpenses, setPlannedExpenses] = useState(() => {
     const saved = localStorage.getItem('tokyo_plannedExpenses');
     return saved ? JSON.parse(saved) : defaultPlannedExpensesData;
@@ -170,6 +188,7 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => { localStorage.setItem('tokyo_tripDays', tripDays); }, [tripDays]);
+  useEffect(() => { localStorage.setItem('tokyo_itinerary', JSON.stringify(itinerary)); }, [itinerary]);
   useEffect(() => { localStorage.setItem('tokyo_plannedExpenses', JSON.stringify(plannedExpenses)); }, [plannedExpenses]);
   useEffect(() => { localStorage.setItem('tokyo_actualExpenses', JSON.stringify(actualExpenses)); }, [actualExpenses]);
   useEffect(() => { localStorage.setItem('tokyo_globalBudget', JSON.stringify(globalBudget)); }, [globalBudget]);
@@ -177,7 +196,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('tokyo_paymentBudgets', JSON.stringify(paymentBudgets)); }, [paymentBudgets]);
   useEffect(() => { localStorage.setItem('tokyo_exchangeRate', exchangeRate); }, [exchangeRate]);
 
-  // --- ประมวลผลข้อมูล ---
+  // --- ประมวลผลข้อมูลกราฟ ---
   const processedData = useMemo(() => {
     let totalActual = 0;
     let totalPlanned = Object.values(categoryBudgets).reduce((sum, val) => sum + val, 0);
@@ -235,7 +254,7 @@ export default function App() {
 
   const { totalPlanned, totalActual, dailyDataForChart, categoryDataForList, walletStats } = processedData;
 
-  // --- Handlers ---
+  // --- Handlers สำหรับเพิ่ม/ลบ ค่าใช้จ่าย ---
   const handleAddExpense = (e) => {
     e.preventDefault();
     if (!newExpense.item || !newExpense.cost) return;
@@ -251,17 +270,50 @@ export default function App() {
   };
 
   const handleDeleteExpense = (id, type) => {
-    if(window.confirm('ต้องการลบรายการนี้ใช่ไหม?')) {
+    requestConfirm('ต้องการลบรายการนี้ใช่ไหม?', () => {
       if (type === 'actual') {
-        setActualExpenses(actualExpenses.filter(e => e.id !== id));
+        setActualExpenses(prev => prev.filter(e => e.id !== id));
       } else {
-        setPlannedExpenses(plannedExpenses.filter(e => e.id !== id));
+        setPlannedExpenses(prev => prev.filter(e => e.id !== id));
       }
-    }
+    });
+  };
+
+  // --- Handlers สำหรับแก้ไข Day Plan ---
+  const handleUpdateDayInfo = (day, field, value) => {
+    setItinerary(prev => {
+      const exists = prev.find(p => p.day === day);
+      if (exists) {
+        return prev.map(p => p.day === day ? { ...p, [field]: value } : p);
+      } else {
+        return [...prev, { day, date: '', title: '', details: [], [field]: value }];
+      }
+    });
+  };
+
+  const handleAddPlanActivity = (e, day) => {
+    e.preventDefault();
+    if (!newPlanDesc) return;
+    setItinerary(prev => {
+      const exists = prev.find(p => p.day === day);
+      if (exists) {
+        return prev.map(p => p.day === day ? { ...p, details: [...p.details, { time: newPlanTime, desc: newPlanDesc }] } : p);
+      } else {
+        return [...prev, { day, date: '', title: '', details: [{ time: newPlanTime, desc: newPlanDesc }] }];
+      }
+    });
+    setNewPlanTime('');
+    setNewPlanDesc('');
+  };
+
+  const handleDeletePlanActivity = (day, idx) => {
+    requestConfirm('ลบกิจกรรมนี้ออกจากแพลน?', () => {
+      setItinerary(prev => prev.map(p => p.day === day ? { ...p, details: p.details.filter((_, i) => i !== idx) } : p));
+    });
   };
 
   return (
-    <div className={`min-h-screen font-sans pb-24 transition-colors duration-200 ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
+    <div className={`min-h-screen font-sans pb-24 transition-colors duration-200 relative ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
       
       {/* --- ส่วนหัวและเครื่องคิดเลข (Sticky แบบติดขอบจอบน) --- */}
       <div className={`sticky top-0 z-40 px-4 py-3 shadow-sm border-b transition-colors ${isDarkMode ? 'bg-gray-900/95 border-gray-800' : 'bg-white/95 border-gray-200'} backdrop-blur-md`}>
@@ -310,7 +362,7 @@ export default function App() {
         {/* --- Tab 1: Overview --- */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* KPI Cards (ปรับเป็น 2 คอลัมน์บนมือถือ) */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               <div className={`p-4 md:p-6 rounded-2xl shadow-sm border flex flex-col md:flex-row items-start md:items-center gap-3 transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl"><ListTodo size={20} /></div>
@@ -406,60 +458,133 @@ export default function App() {
           </div>
         )}
 
-        {/* --- Tab 5: Day Plan (แพลนแบบแยกแต่ละวัน) --- */}
+        {/* --- Tab 5: Day Plan (แพลนแบบแยกแต่ละวัน แบบแก้ไขได้ พร้อมปุ่มเพิ่ม/ลดวัน) --- */}
         {activeTab === 'itinerary' && (
           <div className="animate-in fade-in duration-300 space-y-4">
             
-            {/* Sub-Tabs สำหรับเลือก Day */}
-            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2">
+            {/* Sub-Tabs สำหรับเลือก Day พร้อมปุ่ม + และ - */}
+            <div className="flex items-center gap-2 pb-2 overflow-x-auto no-scrollbar">
               {Array.from({ length: tripDays }, (_, i) => `Day ${i + 1}`).map(day => (
                 <button
                   key={day}
-                  onClick={() => setSelectedPlanDay(day)}
+                  onClick={() => {
+                    setSelectedPlanDay(day);
+                    setIsEditPlanMode(false); // ปิดโหมดแก้ไขเมื่อสลับวัน
+                  }}
                   className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${selectedPlanDay === day ? 'bg-emerald-500 text-white shadow-md' : (isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50')}`}
                 >
                   {day}
                 </button>
               ))}
+              
+              {/* ปุ่มเพิ่มวัน / ลดวัน */}
+              <div className={`flex items-center gap-1 pl-2 border-l ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                <button 
+                  onClick={() => setTripDays(prev => prev + 1)} 
+                  className={`p-2 rounded-full shrink-0 transition-colors ${isDarkMode ? 'bg-gray-800 text-emerald-400 hover:bg-gray-700' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}`} 
+                  title="เพิ่มจำนวนวัน"
+                >
+                  <Plus size={16} />
+                </button>
+                {tripDays > 1 && (
+                  <button 
+                    onClick={() => {
+                      requestConfirm('ต้องการลดจำนวนวันลง 1 วันใช่ไหม?\n(ข้อมูลของวันสุดท้ายจะถูกซ่อนไว้ ไม่ได้ลบหายไป)', () => {
+                        setTripDays(prev => {
+                          const newDays = Math.max(1, prev - 1);
+                          if (selectedPlanDay === `Day ${prev}`) {
+                            setSelectedPlanDay(`Day ${newDays}`);
+                          }
+                          return newDays;
+                        });
+                      });
+                    }} 
+                    className={`p-2 rounded-full shrink-0 transition-colors ${isDarkMode ? 'bg-gray-800 text-red-400 hover:bg-gray-700' : 'bg-red-100 text-red-600 hover:bg-red-200'}`} 
+                    title="ลดจำนวนวัน"
+                  >
+                    <Minus size={16} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* เนื้อหาของ Day ที่ถูกเลือก */}
             <div className={`p-5 md:p-6 rounded-2xl shadow-sm border min-h-[400px] transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+              <div className="flex justify-between items-start mb-4 md:mb-6">
+                 <h3 className="text-lg font-bold flex items-center gap-2">
+                    <Calendar className="text-emerald-500" size={22}/> Day Plan
+                 </h3>
+                 {/* ปุ่มเปิด/ปิด โหมดแก้ไข */}
+                 <button 
+                    onClick={() => setIsEditPlanMode(!isEditPlanMode)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${isEditPlanMode ? 'bg-emerald-500 text-white shadow-sm' : (isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}`}
+                 >
+                    {isEditPlanMode ? <><Save size={16}/> เสร็จสิ้น</> : <><Edit size={16}/> แก้ไขแผน</>}
+                 </button>
+              </div>
+
               {(() => {
-                const plan = tripItinerary.find(p => p.day === selectedPlanDay);
-                
-                if (!plan) {
-                  return (
-                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                      <MapPin size={48} className={isDarkMode ? 'text-gray-700' : 'text-gray-200'} />
-                      <p className={`mt-4 font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>ยังไม่มีข้อมูลแพลนสำหรับวันนี้</p>
-                      <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>คุณสามารถเพิ่มข้อมูลได้ในโค้ดส่วน tripItinerary</p>
-                    </div>
-                  );
-                }
+                const plan = itinerary.find(p => p.day === selectedPlanDay) || { day: selectedPlanDay, date: '', title: '', details: [] };
 
                 return (
                   <div className="relative">
-                    <div className="mb-6 pb-4 border-b border-dashed border-gray-200 dark:border-gray-700">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <h3 className="font-bold text-xl md:text-2xl text-emerald-500">{plan.day}</h3>
-                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{plan.date}</span>
-                      </div>
-                      <p className={`font-bold text-lg ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{plan.title}</p>
-                    </div>
+                    {/* ส่วนหัวข้อและวันที่ */}
+                    {isEditPlanMode ? (
+                       <div className={`mb-6 space-y-3 pb-4 border-b border-dashed ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                          <div>
+                             <label className={`block text-xs font-bold mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>วันที่ (Date)</label>
+                             <input type="text" value={plan.date || ''} onChange={e => handleUpdateDayInfo(selectedPlanDay, 'date', e.target.value)} placeholder="เช่น ศุกร์ที่ 8 พฤษภาคม" className={`w-full p-2.5 rounded-lg outline-none text-sm transition-colors border focus:ring-2 focus:ring-emerald-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-900'}`} />
+                          </div>
+                          <div>
+                             <label className={`block text-xs font-bold mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>หัวข้อทริป (Title)</label>
+                             <input type="text" value={plan.title || ''} onChange={e => handleUpdateDayInfo(selectedPlanDay, 'title', e.target.value)} placeholder="เช่น Asakusa & Ueno" className={`w-full p-2.5 rounded-lg outline-none text-sm transition-colors border focus:ring-2 focus:ring-emerald-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-900'}`} />
+                          </div>
+                       </div>
+                    ) : (
+                       <div className={`mb-6 pb-4 border-b border-dashed ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                         <div className="flex items-baseline gap-2 mb-1">
+                           <h3 className="font-bold text-xl md:text-2xl text-emerald-500">{plan.day}</h3>
+                           <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{plan.date || 'ยังไม่ได้ระบุวันที่'}</span>
+                         </div>
+                         <p className={`font-bold text-lg ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{plan.title || 'ไม่มีหัวข้อทริป'}</p>
+                       </div>
+                    )}
                     
-                    <div className="space-y-4">
+                    {/* ส่วนรายการกิจกรรม */}
+                    <div className="space-y-3">
                       {plan.details.map((act, i) => (
-                        <div key={i} className={`p-4 rounded-xl border flex flex-col md:flex-row md:items-center gap-2 md:gap-4 transition-colors ${isDarkMode ? 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/60' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm'}`}>
-                          <div className={`font-bold text-sm shrink-0 md:w-20 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                            {act.time}
+                        <div key={i} className={`p-4 rounded-xl border flex items-center justify-between gap-2 md:gap-4 transition-colors ${isDarkMode ? 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/60' : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-sm'}`}>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 w-full">
+                             <div className={`font-bold text-sm shrink-0 md:w-20 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                               {act.time}
+                             </div>
+                             <div className={`text-[14px] leading-relaxed flex-1 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                               {act.desc}
+                             </div>
                           </div>
-                          <div className={`text-[15px] leading-relaxed ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                            {act.desc}
-                          </div>
+                          {/* ปุ่มลบ จะโผล่มาเฉพาะโหมดแก้ไข */}
+                          {isEditPlanMode && (
+                             <button onClick={() => handleDeletePlanActivity(selectedPlanDay, i)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 dark:hover:bg-gray-600 transition-colors shrink-0">
+                               <Trash2 size={16} />
+                             </button>
+                          )}
                         </div>
                       ))}
+                      {plan.details.length === 0 && !isEditPlanMode && (
+                         <div className="py-8 text-center text-gray-400">ยังไม่มีกิจกรรมในวันนี้ (กด "แก้ไขแผน" เพื่อเพิ่มกิจกรรม)</div>
+                      )}
                     </div>
+
+                    {/* ฟอร์มสำหรับเพิ่มกิจกรรม จะโผล่มาเฉพาะโหมดแก้ไข */}
+                    {isEditPlanMode && (
+                       <form onSubmit={(e) => handleAddPlanActivity(e, selectedPlanDay)} className={`mt-4 p-3 md:p-4 rounded-xl border flex flex-col md:flex-row gap-2 md:gap-3 transition-colors ${isDarkMode ? 'bg-gray-700/50 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'}`}>
+                          <input type="text" value={newPlanTime} onChange={e => setNewPlanTime(e.target.value)} placeholder="เวลา (เช่น 10:00, เช้า)" className={`w-full md:w-36 p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-emerald-500 ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-emerald-200 text-gray-900'}`} required/>
+                          <input type="text" value={newPlanDesc} onChange={e => setNewPlanDesc(e.target.value)} placeholder="รายละเอียดกิจกรรม..." className={`flex-1 p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-emerald-500 ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-emerald-200 text-gray-900'}`} required/>
+                          <button type="submit" className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-1 font-bold text-sm shadow-sm transition-colors">
+                             <Plus size={16}/> เพิ่ม
+                          </button>
+                       </form>
+                    )}
                   </div>
                 );
               })()}
@@ -479,7 +604,6 @@ export default function App() {
             {/* List ของรายการค่าใช้จ่ายแบบ Card */}
             <div className="space-y-3">
               {(detailsView === 'actual' ? actualExpenses : plannedExpenses).sort((a,b) => {
-                // เรียงวันที่ให้ถูกต้อง (Day 1, Day 2 ... Day 10)
                 const numA = parseInt(a.day.replace('Day ', '')) || 0;
                 const numB = parseInt(b.day.replace('Day ', '')) || 0;
                 return numA - numB;
@@ -545,12 +669,12 @@ export default function App() {
               <div className="flex flex-col mb-6 gap-3">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   <ReceiptText size={20} className={entryType === 'actual' ? "text-rose-500" : "text-blue-500"} /> 
-                  เพิ่มรายการ
+                  เพิ่มรายการใช้จ่าย
                 </h3>
                 {/* Switcher */}
                 <div className={`flex p-1 rounded-lg text-xs font-medium ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                   <button type="button" onClick={() => setEntryType('actual')} className={`flex-1 py-2 rounded-md transition-all ${entryType === 'actual' ? 'bg-rose-500 text-white shadow-sm' : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>จ่ายจริง</button>
-                  <button type="button" onClick={() => setEntryType('plan')} className={`flex-1 py-2 rounded-md transition-all ${entryType === 'plan' ? 'bg-blue-500 text-white shadow-sm' : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>แผนล่วงหน้า</button>
+                  <button type="button" onClick={() => setEntryType('plan')} className={`flex-1 py-2 rounded-md transition-all ${entryType === 'plan' ? 'bg-blue-500 text-white shadow-sm' : (isDarkMode ? 'text-gray-400' : 'text-gray-500')}`}>แผนการเงินล่วงหน้า</button>
                 </div>
               </div>
 
@@ -588,7 +712,7 @@ export default function App() {
                   </div>
                 </div>
                 <button type="submit" className={`w-full mt-2 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 ${entryType === 'actual' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
-                  <Plus size={18} /> บันทึก{entryType === 'actual' ? 'รายจ่ายจริง' : 'แผนล่วงหน้า'}
+                  <Plus size={18} /> บันทึก{entryType === 'actual' ? 'รายจ่ายจริง' : 'แผนการเงิน'}
                 </button>
               </form>
             </div>
@@ -596,21 +720,25 @@ export default function App() {
             {/* Forms: Settings */}
             <div className="space-y-6 pb-6">
               
-              {/* ส่วนตั้งค่าวันเดินทาง */}
+              {/* ส่วนตั้งค่าวันเดินทาง ในหน้าจัดการ (เผื่อต้องการแก้ไขจากหน้านี้) */}
               <div className={`p-5 md:p-6 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
                 <h3 className="text-base font-bold mb-4 flex items-center justify-between">
                   <span className="flex items-center gap-2"><Calendar size={18} className="text-emerald-500" /> จำนวนวันเดินทาง</span>
                 </h3>
                 <div className="flex items-center justify-center gap-6">
-                  <button onClick={() => setTripDays(Math.max(1, tripDays - 1))} className={`p-3 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                    <span className="text-xl font-bold px-1">-</span>
+                  <button onClick={() => {
+                    if (tripDays > 1) {
+                      requestConfirm('ต้องการลดจำนวนวันลง 1 วันใช่ไหม?', () => setTripDays(prev => Math.max(1, prev - 1)));
+                    }
+                  }} className={`p-3 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                    <Minus size={20} className={tripDays > 1 ? "text-red-500" : "text-gray-400"} />
                   </button>
                   <div className="text-center w-24">
                     <p className="text-3xl font-bold text-emerald-500">{tripDays}</p>
                     <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>วัน (Days)</p>
                   </div>
-                  <button onClick={() => setTripDays(tripDays + 1)} className={`p-3 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                    <span className="text-xl font-bold px-1">+</span>
+                  <button onClick={() => setTripDays(prev => prev + 1)} className={`p-3 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                    <Plus size={20} className="text-emerald-500" />
                   </button>
                 </div>
               </div>
@@ -660,7 +788,7 @@ export default function App() {
         )}
       </div>
 
-      {/* --- เมนูด้านล่าง (Bottom Navigation) สำหรับมือถือ ปรับให้มี 5 ปุ่ม --- */}
+      {/* --- เมนูด้านล่าง (Bottom Navigation) สำหรับมือถือ --- */}
       <div className={`fixed bottom-0 left-0 right-0 border-t transition-colors z-50 md:hidden ${isDarkMode ? 'bg-gray-900/95 border-gray-800' : 'bg-white/95 border-gray-200'} backdrop-blur-md pb-safe`}>
         <div className="flex justify-around items-center">
           <button onClick={() => setActiveTab('overview')} className={`flex flex-col items-center flex-1 py-3 gap-1 transition-colors ${activeTab === 'overview' ? 'text-blue-500' : (isDarkMode ? 'text-gray-500 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600')}`}>
@@ -685,6 +813,32 @@ export default function App() {
           </button>
         </div>
       </div>
+
+      {/* --- Custom Confirm Modal --- */}
+      {confirmState.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className={`p-6 rounded-2xl shadow-xl max-w-sm w-full ${isDarkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} border ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+            <h3 className="text-base font-bold mb-6 whitespace-pre-line leading-relaxed">{confirmState.message}</h3>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmState({ isOpen: false, message: '', onConfirm: null })}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmState.onConfirm) confirmState.onConfirm();
+                  setConfirmState({ isOpen: false, message: '', onConfirm: null });
+                }}
+                className="px-4 py-2 rounded-lg font-medium text-sm bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-sm"
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
     </div>
   );
