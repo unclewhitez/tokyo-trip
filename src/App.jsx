@@ -194,15 +194,6 @@ export default function App() {
     return saved ? JSON.parse(saved) : 45000;
   }); 
   
-  const [categoryBudgets, setCategoryBudgets] = useState(() => {
-    const saved = localStorage.getItem('tokyo_categoryBudgets');
-    if (saved) return JSON.parse(saved);
-    const budgets = {};
-    Object.keys(categoryColors).forEach(cat => budgets[cat] = 0);
-    defaultPlannedExpensesData.forEach(exp => { if (budgets[exp.category] !== undefined) budgets[exp.category] += exp.cost; });
-    return budgets;
-  });
-
   const [paymentBudgets, setPaymentBudgets] = useState(() => {
     const saved = localStorage.getItem('tokyo_paymentBudgets');
     return saved ? JSON.parse(saved) : initialPaymentBudgets;
@@ -222,12 +213,6 @@ export default function App() {
       setItinerary(defaultItinerary);
       setPlannedExpenses(defaultPlannedExpensesData);
       setTripDays(5);
-      
-      const newBudgets = {};
-      Object.keys(categoryColors).forEach(cat => newBudgets[cat] = 0);
-      defaultPlannedExpensesData.forEach(exp => { if (newBudgets[exp.category] !== undefined) newBudgets[exp.category] += exp.cost; });
-      setCategoryBudgets(newBudgets);
-      
       setGlobalBudget(45000);
       setActiveTab('overview');
     });
@@ -248,14 +233,13 @@ export default function App() {
   useEffect(() => { localStorage.setItem('tokyo_plannedExpenses', JSON.stringify(plannedExpenses)); }, [plannedExpenses]);
   useEffect(() => { localStorage.setItem('tokyo_actualExpenses', JSON.stringify(actualExpenses)); }, [actualExpenses]);
   useEffect(() => { localStorage.setItem('tokyo_globalBudget', JSON.stringify(globalBudget)); }, [globalBudget]);
-  useEffect(() => { localStorage.setItem('tokyo_categoryBudgets', JSON.stringify(categoryBudgets)); }, [categoryBudgets]);
   useEffect(() => { localStorage.setItem('tokyo_paymentBudgets', JSON.stringify(paymentBudgets)); }, [paymentBudgets]);
   useEffect(() => { localStorage.setItem('tokyo_exchangeRate', exchangeRate); }, [exchangeRate]);
 
   // --- ประมวลผลข้อมูลกราฟ ---
   const processedData = useMemo(() => {
     let totalActual = 0;
-    let totalPlanned = Object.values(categoryBudgets).reduce((sum, val) => sum + val, 0);
+    let totalPlanned = 0;
     
     const dayStats = {};
     for (let i = 1; i <= tripDays; i++) {
@@ -263,7 +247,7 @@ export default function App() {
     }
     
     const catStats = Object.keys(categoryColors).reduce((acc, cat) => {
-      acc[cat] = { planned: categoryBudgets[cat] || 0, actual: 0, color: categoryColors[cat], icon: categoryIcons[cat] };
+      acc[cat] = { planned: 0, actual: 0, color: categoryColors[cat], icon: categoryIcons[cat] };
       return acc;
     }, {});
 
@@ -273,8 +257,12 @@ export default function App() {
     }, {});
 
     plannedExpenses.forEach(exp => {
+      const cost = Number(exp.cost);
+      totalPlanned += cost;
       if (!dayStats[exp.day]) dayStats[exp.day] = { planned: 0, actual: 0 }; 
-      dayStats[exp.day].planned += Number(exp.cost);
+      dayStats[exp.day].planned += cost;
+      
+      if (catStats[exp.category]) catStats[exp.category].planned += cost;
     });
 
     actualExpenses.forEach(exp => {
@@ -306,7 +294,7 @@ export default function App() {
       .sort((a, b) => b.planned - a.planned);
 
     return { totalPlanned, totalActual, dailyDataForChart, categoryDataForList, walletStats };
-  }, [actualExpenses, plannedExpenses, categoryBudgets, paymentBudgets, tripDays]);
+  }, [actualExpenses, plannedExpenses, paymentBudgets, tripDays]);
 
   const { totalPlanned, totalActual, dailyDataForChart, categoryDataForList, walletStats } = processedData;
 
