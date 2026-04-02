@@ -10,7 +10,7 @@ import {
   Edit, Save, RefreshCw
 } from 'lucide-react';
 
-// --- ข้อมูลแผนการใช้จ่าย (จากไฟล์อัปเดต) ---
+// --- ข้อมูลแผนการใช้จ่าย ---
 const defaultPlannedExpensesData = [
   // Day 1
   { id: 'p1', day: 'Day 1', category: 'Transport', item: 'เดินทางสนามบิน → โรงแรม', cost: 1300, method: 'Suica' },
@@ -43,7 +43,7 @@ const defaultPlannedExpensesData = [
   { id: 'p24', day: 'Day 5', category: 'Food', item: 'กาแฟ + อาหารเล็กน้อย', cost: 500, method: 'Cash' }
 ];
 
-const initialActualExpenses = []; // เริ่มต้นทริปใหม่แบบรายจ่ายจริงว่างเปล่า
+const initialActualExpenses = [];
 
 const categoryColors = {
   'Food': '#FF8042', 'Snack': '#F472B6', 'Beer': '#FFBB28', 'Coffee': '#00C49F',
@@ -58,13 +58,13 @@ const categoryIcons = {
 };
 
 const initialPaymentBudgets = {
-  'Cash': 40000, 'Suica': 15000, 'Travel Card': 30000, 'Credit Card': 41000
+  'Cash': 20000, 'Suica': 10000, 'Travel Card': 10000, 'Credit Card': 5000
 };
 
-// --- ข้อมูล Day Plan (Itinerary จากไฟล์อัปเดต) ---
+// --- ข้อมูล Day Plan (Itinerary) ---
 const defaultItinerary = [
   {
-    day: 'Day 1', date: 'พฤหัสบดีที่ 7 พฤษภาคม', title: 'Asakusa + Ueno + Beer',
+    day: 'Day 1', date: 'พฤหัสบดีที่ 7 พฤษภาคม 2026', title: 'Asakusa + Ueno + Beer',
     details: [
       { time: '08:00', desc: '✈️ ถึงสนามบินนาริตะ (Terminal 2) ผ่าน ตม. & รับกระเป๋า' },
       { time: '09:00', desc: '🚆 นั่งรถไฟ Keisei Access Express เข้าเมือง (ลง Kuramae)' },
@@ -81,7 +81,7 @@ const defaultItinerary = [
     ]
   },
   {
-    day: 'Day 2', date: 'ศุกร์ที่ 8 พฤษภาคม', title: 'Ueno + Ryogoku (Art & Beer)',
+    day: 'Day 2', date: 'ศุกร์ที่ 8 พฤษภาคม 2026', title: 'Ueno + Ryogoku (Art & Beer)',
     details: [
       { time: '08:30', desc: '☕ กาแฟเช้าย่าน Kuramae (Leaves / Kakuya / Nui)' },
       { time: '09:15', desc: '🚆 นั่ง Oedo Line ไปลง Ueno-Okachimachi' },
@@ -98,7 +98,7 @@ const defaultItinerary = [
     ]
   },
   {
-    day: 'Day 3', date: 'เสาร์ที่ 9 พฤษภาคม', title: 'Thai Festival & Shibuya',
+    day: 'Day 3', date: 'เสาร์ที่ 9 พฤษภาคม 2026', title: 'Thai Festival & Shibuya',
     details: [
       { time: '08:30', desc: '🚇 นั่ง Ginza Line จาก Asakusa ไปลงสุดสาย Shibuya' },
       { time: '09:30', desc: '☕ Coffee Morning ที่ Fuglen Tokyo (ฝั่ง Tomigaya)' },
@@ -112,7 +112,7 @@ const defaultItinerary = [
     ]
   },
   {
-    day: 'Day 4', date: 'อาทิตย์ที่ 10 พฤษภาคม', title: 'Run + Harajuku + Akihabara',
+    day: 'Day 4', date: 'อาทิตย์ที่ 10 พฤษภาคม 2026', title: 'Run + Harajuku + Akihabara',
     details: [
       { time: '06:45', desc: '🏃‍♂️ Morning Run 5km ริมแม่น้ำ Sumida (วิ่งลอด 3 สะพาน)' },
       { time: '07:40', desc: '🚿 อาบน้ำ แต่งตัว เตรียมออกเที่ยว' },
@@ -127,7 +127,7 @@ const defaultItinerary = [
     ]
   },
   {
-    day: 'Day 5', date: 'จันทร์ที่ 11 พฤษภาคม', title: 'Departure',
+    day: 'Day 5', date: 'จันทร์ที่ 11 พฤษภาคม 2026', title: 'Departure',
     details: [
       { time: '07:00', desc: '🎒 เช็คเอาต์ คืนกุญแจโรงแรม' },
       { time: '07:15', desc: '☕ จิบกาแฟส่งท้าย (Lucent / Sol’s)' },
@@ -173,7 +173,7 @@ export default function App() {
   const [exchangeRate, setExchangeRate] = useState(() => Number(localStorage.getItem('tokyo_exchangeRate')) || 0.225);
   const [calcYen, setCalcYen] = useState('');
 
-  // --- States: ดึงข้อมูลจาก Local Storage ---
+  // --- States: ดึงข้อมูลจาก Local Storage หรือใช้ค่า Default ---
   const [itinerary, setItinerary] = useState(() => {
     const saved = localStorage.getItem('tokyo_itinerary');
     return saved ? JSON.parse(saved) : defaultItinerary;
@@ -191,7 +191,7 @@ export default function App() {
   
   const [globalBudget, setGlobalBudget] = useState(() => {
     const saved = localStorage.getItem('tokyo_globalBudget');
-    return saved ? JSON.parse(saved) : 45000; // ปรับให้ตรงกับ Max Budget จากไฟล์
+    return saved ? JSON.parse(saved) : 45000;
   }); 
   
   const [categoryBudgets, setCategoryBudgets] = useState(() => {
@@ -212,9 +212,13 @@ export default function App() {
     day: 'Day 1', category: 'Food', item: '', cost: '', method: 'Cash'
   });
 
-  // ฟังก์ชันโหลดข้อมูลเริ่มต้นทับของเก่า (Sync from Template)
+  // --- States: สำหรับการแก้ไขรายการ ---
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [editExpenseData, setEditExpenseData] = useState({});
+
+  // --- ฟังก์ชันรีเซ็ตและโหลดข้อมูลจากไฟล์ต้นฉบับ ---
   const reloadDefaultData = () => {
-    requestConfirm('คุณต้องการรีเซ็ต "แพลนเที่ยว" และ "งบประมาณ" กลับไปเป็นข้อมูลตั้งต้นใช่หรือไม่?\n\n(รายจ่ายจริงที่คุณเคยบันทึกไว้จะไม่หายไป)', () => {
+    requestConfirm('คุณต้องการรีเซ็ต "แพลนเที่ยว" และ "งบประมาณ" กลับไปเป็นข้อมูลเริ่มต้นใช่หรือไม่?\n\n(รายจ่ายจริงที่คุณเคยบันทึกไว้จะไม่หายไป)', () => {
       setItinerary(defaultItinerary);
       setPlannedExpenses(defaultPlannedExpensesData);
       setTripDays(5);
@@ -225,6 +229,7 @@ export default function App() {
       setCategoryBudgets(newBudgets);
       
       setGlobalBudget(45000);
+      setActiveTab('overview');
     });
   };
 
@@ -330,6 +335,32 @@ export default function App() {
     });
   };
 
+  const handleStartEdit = (expense) => {
+    setEditingExpenseId(expense.id);
+    setEditExpenseData({ ...expense });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExpenseId(null);
+    setEditExpenseData({});
+  };
+
+  const handleSaveEdit = (e, type) => {
+    e.preventDefault();
+    if (!editExpenseData.item || !editExpenseData.cost) return;
+    
+    const updatedExpense = { ...editExpenseData, cost: Number(editExpenseData.cost) };
+    
+    if (type === 'actual') {
+      setActualExpenses(prev => prev.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
+    } else {
+      setPlannedExpenses(prev => prev.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
+    }
+    
+    setEditingExpenseId(null);
+    setEditExpenseData({});
+  };
+
   // --- Handlers สำหรับแก้ไข Day Plan ---
   const handleUpdateDayInfo = (day, field, value) => {
     setItinerary(prev => {
@@ -364,8 +395,13 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen font-sans pb-24 transition-colors duration-200 relative ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
+    // มีการใส่ Style ตรงนี้เพื่อนำเข้า Google Fonts ชื่อ "Prompt" มาครอบคลุมทั้งแอป
+    <div className={`min-h-screen pb-24 transition-colors duration-200 relative ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`} style={{ fontFamily: "'Prompt', sans-serif" }}>
       
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;700&display=swap');`}
+      </style>
+
       {/* --- ส่วนหัวและเครื่องคิดเลข --- */}
       <div className={`sticky top-0 z-40 px-4 py-3 shadow-sm border-b transition-colors ${isDarkMode ? 'bg-gray-900/95 border-gray-800' : 'bg-white/95 border-gray-200'} backdrop-blur-md`}>
         <div className="max-w-7xl mx-auto space-y-3">
@@ -644,6 +680,34 @@ export default function App() {
                 const numB = parseInt(b.day.replace('Day ', '')) || 0;
                 return numA - numB;
               }).map((expense) => {
+                
+                // ถ้ารายการนี้กำลังถูกแก้ไขอยู่ ให้แสดงแบบฟอร์มแก้ไข
+                if (editingExpenseId === expense.id) {
+                  return (
+                    <form key={expense.id} onSubmit={(e) => handleSaveEdit(e, detailsView)} className={`p-4 rounded-2xl shadow-sm border transition-colors ${isDarkMode ? 'bg-gray-800 border-blue-500/50' : 'bg-white border-blue-400'}`}>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <select value={editExpenseData.day} onChange={e => setEditExpenseData({...editExpenseData, day: e.target.value})} className={`p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}>
+                          {Array.from({ length: tripDays }, (_, i) => `Day ${i + 1}`).map(day => <option key={day} value={day}>{day}</option>)}
+                        </select>
+                        <select value={editExpenseData.category} onChange={e => setEditExpenseData({...editExpenseData, category: e.target.value})} className={`p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}>
+                          {Object.keys(categoryColors).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      </div>
+                      <input type="text" value={editExpenseData.item} onChange={e => setEditExpenseData({...editExpenseData, item: e.target.value})} placeholder="ชื่อรายการ" className={`w-full p-2 mb-3 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} required />
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <input type="number" value={editExpenseData.cost} onChange={e => setEditExpenseData({...editExpenseData, cost: e.target.value})} placeholder="จำนวนเงิน" className={`w-full p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} required min="0" />
+                        <select value={editExpenseData.method} onChange={e => setEditExpenseData({...editExpenseData, method: e.target.value})} className={`p-2 rounded-lg outline-none text-sm border focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-indigo-900/50 border-indigo-700 text-indigo-300' : 'bg-indigo-50 border-indigo-200 text-indigo-700'}`}>
+                           <option value="Cash">💵 เงินสด</option><option value="Suica">🪪 Suica</option><option value="Travel Card">💳 Travel Card</option><option value="Credit Card">💳 Credit Card</option>
+                        </select>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button type="button" onClick={handleCancelEdit} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>ยกเลิก</button>
+                        <button type="submit" className="px-4 py-2 text-sm font-bold rounded-lg bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-1.5"><Save size={16}/> บันทึก</button>
+                      </div>
+                    </form>
+                  );
+                }
+
                 const Icon = categoryIcons[expense.category] || ReceiptText;
                 return (
                   <div key={expense.id} className={`p-4 rounded-2xl shadow-sm border flex justify-between items-center transition-colors ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
@@ -658,9 +722,14 @@ export default function App() {
                     </div>
                     <div className="text-right flex flex-col items-end gap-1.5 flex-shrink-0 pl-2">
                       <p className="font-bold text-base md:text-lg">{formatYen(expense.cost)}</p>
-                      <button onClick={() => handleDeleteExpense(expense.id, detailsView)} className="text-gray-400 hover:text-red-500 p-1 bg-gray-100 dark:bg-gray-700 rounded-full" title="ลบรายการ">
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex gap-1.5 mt-0.5">
+                        <button onClick={() => handleStartEdit(expense)} className={`p-1.5 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-400 hover:text-blue-400' : 'bg-gray-100 text-gray-500 hover:text-blue-500'}`} title="แก้ไขรายการ">
+                          <Edit size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteExpense(expense.id, detailsView)} className={`p-1.5 rounded-full transition-colors ${isDarkMode ? 'bg-gray-700 text-gray-400 hover:text-red-400' : 'bg-gray-100 text-gray-500 hover:text-red-500'}`} title="ลบรายการ">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
